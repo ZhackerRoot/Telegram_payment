@@ -13,7 +13,6 @@ from telegram.ext import (
 )
 
 import requests
-import re
 
 
 # ================= CONFIG =================
@@ -25,7 +24,9 @@ SERVER_URL = "https://skynet-skynet.up.railway.app/create_user_request"
 BOT_KEY = "skynet_super_secret_777"
 
 
-PLAN, PAYMENT, EMAIL = range(3)
+# ================= STATES =================
+
+PLAN, PAYMENT, UID = range(3)
 
 
 # ================= PAYMENT DATA =================
@@ -39,10 +40,10 @@ PAYMENTS = {
 }
 
 
-# ================= EMAIL CHECK =================
+# ================= UID VALIDATOR =================
 
-def valid_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+def valid_uid(uid: str):
+    return uid.isdigit() and len(uid) >= 5
 
 
 # ================= START =================
@@ -115,23 +116,23 @@ async def choose_payment(update: Update, context):
 
 {PAYMENTS[method]}
 
-📧 Now send your PocketOption EMAIL:
+🆔 Now send your PocketOption UID:
 """,
         reply_markup=ReplyKeyboardRemove(),
     )
 
-    return EMAIL
+    return UID
 
 
-# ================= EMAIL =================
+# ================= UID =================
 
-async def save_email(update: Update, context):
+async def save_uid(update: Update, context):
 
-    email = update.message.text.strip()
+    uid = update.message.text.strip()
 
-    if not valid_email(email):
-        await update.message.reply_text("❌ Invalid email. Try again.")
-        return EMAIL
+    if not valid_uid(uid):
+        await update.message.reply_text("❌ Invalid UID. Send numbers only.")
+        return UID
 
     plan = context.user_data["plan"]
     payment = context.user_data["payment"]
@@ -141,25 +142,27 @@ async def save_email(update: Update, context):
             SERVER_URL,
             headers={"x-bot-key": BOT_KEY},
             json={
-                "username": email,
+                "uid": uid,
                 "plan": plan,
                 "payment_method": payment,
             },
             timeout=10,
         )
-    except:
+
+    except Exception as e:
+        print(e)
         await update.message.reply_text("⚠ Server error. Try later.")
         return ConversationHandler.END
 
     await update.message.reply_text(
         """
-✅ To‘lov arizasi yuborildi.
+✅ Request submitted successfully!
 
-⏳ Ariza 24 soat ichida ko‘rib chiqiladi.
+⏳ Your payment request will be reviewed within 24 hours.
 
-To‘lov tasdiqlangandan so‘ng robot avtomatik unlock qilinadi.
+After approval, your robot will unlock automatically.
 
-Rahmat!
+Thank you!
 """
     )
 
@@ -184,14 +187,14 @@ def main():
         states={
             PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
             PAYMENT: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_payment)],
-            EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, save_email)],
+            UID: [MessageHandler(filters.TEXT & ~filters.COMMAND, save_uid)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
 
     app.add_handler(conv)
 
-    print("SkyNet Telegram Bot Running...")
+    print("🚀 SkyNet Telegram Bot Running...")
     app.run_polling()
 
 
