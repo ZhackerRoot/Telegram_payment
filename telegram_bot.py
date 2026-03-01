@@ -34,9 +34,9 @@ PLAN, PAYMENT, UID = range(3)
 PAYMENTS = {
     "Visa / Mastercard": "💳 Card Payment\nContact admin",
     "Payme / Click": "🇺🇿 Payme / Click\n+998 XX XXX XX XX",
-    "Crypto BTC": "BTC Wallet:\n1ABCXXXXXXX",
-    "Crypto USDT": "USDT TRC20:\nTXXXXXXX",
-    "Crypto Ethereum": "ETH Wallet:\n0xXXXXXXX",
+    "Crypto BTC": "BTC Wallet:\nbc1qhxf7gq9cgk5k5ejuysna4zr4vge24ql3n2xypn",
+    "Crypto USDT": "USDT TRC20:\nTQbARHTRWmeA42tAbJxNVPsAKCTVBhio57",
+    "Crypto Ethereum": "ETH Wallet:\n0xCa85fdd381705CaC40301bC462FD59889e3d3672",
 }
 
 
