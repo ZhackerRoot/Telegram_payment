@@ -13,36 +13,37 @@ from telegram.ext import (
 )
 
 import requests
-import re
+
 
 # ================= CONFIG =================
 
 BOT_TOKEN = "8601257275:AAEBS7NISCf9MggiBcxTeMWFwR-P2Y8Nqeg"
+
 SERVER_URL = "https://skynet-skynet.up.railway.app/create_user_request"
+
 BOT_KEY = "skynet_super_secret_777"
 
-DOWNLOAD_LINK = "https://yourdomain.com/download/skynet"
 
-PLAN, PAYMENT, UID, EMAIL = range(4)
+# ================= STATES =================
+
+PLAN, PAYMENT, UID = range(3)
+
 
 # ================= PAYMENT DATA =================
 
 PAYMENTS = {
-    "Visa / Mastercard": "💳 Card Payment\nContact admin",
-    "Payme / Click": "🇺🇿 Payme / Click\n+998XXXXXXXX",
-    "Crypto BTC": "BTC Wallet:\n1ABCXXXX",
-    "Crypto USDT": "USDT TRC20:\nTXXXX",
-    "Crypto Ethereum": "ETH Wallet:\n0xXXXX",
+    "Visa / Mastercard": "💳 Card Payment\n4231 2000 0247 1018",
+    "Payme / Click": "🇺🇿 Payme / Click\n9860 1666 0357 4780",
+    "Crypto BTC": "BTC Wallet:\nbc1qhxf7gq9cgk5k5ejuysna4zr4vge24ql3n2xypn",
+    "Crypto USDT": "USDT TRC20:\nTQbARHTRWmeA42tAbJxNVPsAKCTVBhio57",
+    "Crypto Ethereum": "ETH Wallet:\n0xCa85fdd381705CaC40301bC462FD59889e3d3672",
 }
 
-# ================= VALIDATORS =================
 
-def valid_uid(uid):
+# ================= UID VALIDATOR =================
+
+def valid_uid(uid: str):
     return uid.isdigit() and len(uid) >= 5
-
-
-def valid_email(email):
-    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
 
 # ================= START =================
@@ -52,8 +53,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
 
     await update.message.reply_text(
-        "👋 Welcome to *SkyNet Premium*\n\nChoose your plan:",
-        parse_mode="Markdown"
+        "👋 Welcome to Skynet Premium version!\n\nChoose your plan:"
     )
 
     keyboard = [["STANDARD $249"], ["VIP $899"]]
@@ -81,13 +81,17 @@ async def choose_plan(update: Update, context):
     else:
         return PLAN
 
-    keyboard = list(PAYMENTS.keys())
+    keyboard = [
+        ["Visa / Mastercard"],
+        ["Payme / Click"],
+        ["Crypto BTC"],
+        ["Crypto USDT"],
+        ["Crypto Ethereum"],
+    ]
 
     await update.message.reply_text(
         "💳 Choose payment method:",
-        reply_markup=ReplyKeyboardMarkup(
-            [[k] for k in keyboard], resize_keyboard=True
-        ),
+        reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True),
     )
 
     return PAYMENT
@@ -112,7 +116,7 @@ async def choose_payment(update: Update, context):
 
 {PAYMENTS[method]}
 
-🆔 Send your PocketOption UID:
+🆔 Now send your PocketOption UID:
 """,
         reply_markup=ReplyKeyboardRemove(),
     )
@@ -127,31 +131,11 @@ async def save_uid(update: Update, context):
     uid = update.message.text.strip()
 
     if not valid_uid(uid):
-        await update.message.reply_text("❌ Invalid UID.")
+        await update.message.reply_text("❌ Invalid UID. Send numbers only.")
         return UID
-
-    context.user_data["uid"] = uid
-
-    await update.message.reply_text(
-        "📧 Now send your Email (for activation notification):"
-    )
-
-    return EMAIL
-
-
-# ================= EMAIL =================
-
-async def save_email(update: Update, context):
-
-    email = update.message.text.strip()
-
-    if not valid_email(email):
-        await update.message.reply_text("❌ Invalid email.")
-        return EMAIL
 
     plan = context.user_data["plan"]
     payment = context.user_data["payment"]
-    uid = context.user_data["uid"]
 
     try:
         requests.post(
@@ -159,27 +143,26 @@ async def save_email(update: Update, context):
             headers={"x-bot-key": BOT_KEY},
             json={
                 "uid": uid,
-                "email": email,
                 "plan": plan,
                 "payment_method": payment,
             },
             timeout=10,
         )
+
     except Exception as e:
         print(e)
-        await update.message.reply_text("⚠ Server error.")
+        await update.message.reply_text("⚠ Server error. Try later.")
         return ConversationHandler.END
 
     await update.message.reply_text(
-        f"""
-✅ Request submitted!
+        """
+✅ Request submitted successfully!
 
-⏳ Admin will review payment within 24 hours.
+⏳ Your payment request will be reviewed within 24 hours.
 
-📥 Download robot:
-{DOWNLOAD_LINK}
+After approval, your robot will unlock automatically.
 
-After approval robot unlocks automatically.
+Thank you!
 """
     )
 
@@ -205,14 +188,13 @@ def main():
             PLAN: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_plan)],
             PAYMENT: [MessageHandler(filters.TEXT & ~filters.COMMAND, choose_payment)],
             UID: [MessageHandler(filters.TEXT & ~filters.COMMAND, save_uid)],
-            EMAIL: [MessageHandler(filters.TEXT & ~filters.COMMAND, save_email)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
 
     app.add_handler(conv)
 
-    print("🚀 SkyNet Bot Running")
+    print("🚀 SkyNet Telegram Bot Running...")
     app.run_polling()
 
 
